@@ -757,5 +757,52 @@ descriptives_PRE
 descriptives_POST
 descriptives_DELTA
 ##############
+###############################
+#### 3. Correlations ####
+savePlot <- function(plotFunc, filename, widthval = 2000, heightval = 1900) {
+  png(filename = paste0(plotPrefix, filename, ".png"), width = widthval, height = heightval, units = "px", res = 300)
+  plotFunc()
+  dev.off()
+}
+###############################
+# Load the corrplot library
+library(corrplot)
 
+# Change df's
+Data_Pre <- data.frame(lapply(Data_Pre, as.numeric))
+Data_Post <- data.frame(lapply(Data_Post, as.numeric))
+colnames(Data_Pre) <- c("F0", "HNR", "Jitter", "MeanVoicedSeg", "F1/2Ratio")
+colnames(Data_Post) <- c("F0", "HNR", "Jitter", "MeanVoicedSeg", "F1/2Ratio")
+
+# Pre
+correlation_matrix_pre <- cor(Data_Pre)
+# Calculate p-values
+p.mat_pre <- cor.mtest(Data_Pre)$p
+# Create a function for the correlation plot
+plotFunc <- function() {
+  corrplot(correlation_matrix_pre, method = "circle", p.mat = p.mat_pre, type = 'lower', insig='blank', order = 'AOE', diag = FALSE)
+  p1_pre <- corrplot(correlation_matrix_pre, method = "circle", p.mat = p.mat_pre, type = 'lower', insig='blank', order = 'AOE', diag = FALSE)$corrPos
+  text(p1_pre$x, p1_pre$y, round(p1_pre$corr, 2))
+}
+
+# Save plot
+savePlot(plotFunc, "corrPlot_Pre")
+
+
+
+# Post
+correlation_matrix_post <- cor(Data_Post)
+# Calculate p-values
+p.mat_post <- cor.mtest(Data_Post)$p
+# Create a function for the correlation plot
+plotFunc <- function() {
+  corrplot(correlation_matrix_post, method = "circle", p.mat = p.mat_post, type = 'lower', insig='blank', order = 'AOE', diag = FALSE)
+  p1_post <- corrplot(correlation_matrix_post, method = "circle", p.mat = p.mat_post, type = 'lower', insig='blank', order = 'AOE', diag = FALSE)$corrPos
+  text(p1_post$x, p1_post$y, round(p1_post$corr, 2))
+}
+
+# Save plot
+savePlot(plotFunc, "corrPlot_Post")
+
+##### Session Info #
 sessionInfo()
