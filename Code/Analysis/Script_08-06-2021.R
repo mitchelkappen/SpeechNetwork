@@ -63,6 +63,54 @@ Data_SR <- na.omit(Data_SR[,myvars])
 Data_Pre<- na.omit(Data_Pre[,myvarspre])
 Data_Post<- na.omit(Data_Post[,myvarspost])
 
+###### Create a dataframe for Residualized Change Scores #####
+# First, let's merge the two dataframes based on the ID column
+merged_data <- merge(Data_Pre, Data_Post, by = "ID")
+
+# Make sure the data is formatted correctly
+# Convert ID to factor
+merged_data$ID <- as.factor(merged_data$ID)
+
+# Convert all other columns to numeric
+cols_to_convert <- names(merged_data)[-which(names(merged_data) == "ID")]  # All columns except ID
+
+for(col in cols_to_convert) {
+  merged_data[[col]] <- as.numeric(as.character(merged_data[[col]]))
+}
+
+# Initialize an empty dataframe to store the residualized change scores
+residualized_scores <- data.frame(ID = merged_data$ID)
+
+# Loop over the variable pairs and calculate the residualized change scores
+vars_pre <- c(
+  "PRE_F0SEMITONEFROM27.5HZ_SMA3NZ_AMEAN",
+  "PRE_HNRDBACF_SMA3NZ_AMEAN",
+  "PRE_JITTERLOCAL_SMA3NZ_AMEAN",
+  "PRE_MEANVOICEDSEGMENTLENGTHSEC",
+  "PRE_F1F2RATIO"
+)
+
+vars_post <- c(
+  "POST_F0SEMITONEFROM27.5HZ_SMA3NZ_AMEAN",
+  "POST_HNRDBACF_SMA3NZ_AMEAN",
+  "POST_JITTERLOCAL_SMA3NZ_AMEAN",
+  "POST_MEANVOICEDSEGMENTLENGTHSEC",
+  "POST_F1F2RATIO"
+)
+
+for (i in 1:5) {
+  model <- lm(merged_data[[vars_post[i]]] ~ merged_data[[vars_pre[i]]])
+  residuals <- resid(model)
+  residualized_scores[[paste0("RESIDUAL_", sub("PRE_", "", vars_pre[i]))]] <- residuals
+}
+
+# Now, residualized_scores contains the residualized change scores for each of your variables
+# In order to run the rest of the code as is, I will overwrite Data_SR with this data. 
+# Adding NA_Reactivity column from Data_SR to residualized_scores
+residualized_scores <- cbind(NA_Reactivity = Data_SR$NA_REACTIVITY, residualized_scores) # Grab the NA variable. 
+Data_SR_Backup <- Data_SR
+Data_SR <- residualized_scores
+
 n <- 148
 v_SR <- 6
 v_pre <- 5
@@ -557,6 +605,7 @@ R2_S2
 
 
 #### 2.4 Network analyses Stress reactivity - Delta scores ####
+Data_SR$ID <- NULL # We arent using this
 names(Data_SR)
 labels_SR   <- c("NA",
                  "F0",
